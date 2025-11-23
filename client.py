@@ -7,10 +7,10 @@ import io
 def main():
     # --- IMPORTANT ---
     # Change this to the IP address of the machine running server.py
-    HOST = '127.0.0.1'
+    HOST = 'either-rhode.gl.at.ply.gg'
     # -----------------
     
-    PORT = 9999
+    PORT = 64452
 
     print(f"Attempting to connect to {HOST}:{PORT}")
     
